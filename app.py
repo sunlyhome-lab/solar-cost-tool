@@ -15,7 +15,7 @@ address = st.text_input("Prospect's Address (street, city, state)", value="2701 
 utility = st.text_input("Utility Company (e.g. Oncor, TXU, CenterPoint)", value="Ameren")
 avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, value=170.0, step=5.0)
 
-# Securely load your existing key from Streamlit Secrets (never visible on GitHub)
+# Securely load the NEW key from Streamlit Secrets (never visible on GitHub)
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
 if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
@@ -37,6 +37,7 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
         start_date = f"{today.year - 10}-01-01"
         end_date = today.strftime("%Y-%m-%d")
 
+        # EIA API call (exact format from official 2026 documentation)
         url = (
             f"https://api.eia.gov/v2/electricity/retail-sales/data/"
             f"?api_key={EIA_API_KEY}"
@@ -62,17 +63,18 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
             elif not data.get('response', {}).get('data'):
                 st.error("No price data found for this state right now. Try again in a few minutes.")
             else:
-                # Everything worked — build the report
+                # Success! Build the report
                 df = pd.DataFrame(data['response']['data'])
                 df['period'] = pd.to_datetime(df['period'])
                 df = df.sort_values('period')
-                df['price'] = pd.to_numeric(df['price']) / 100
+                df['price'] = pd.to_numeric(df['price']) / 100          # EIA returns cents
                 df['year'] = df['period'].dt.year
                 annual = df.groupby('year')['price'].mean().reset_index()
                 
                 current_price = annual['price'].iloc[-1]
                 usage_kwh = avg_bill / current_price
                 
+                # Project 10 years forward using real historical trend
                 avg_annual_increase = annual['price'].pct_change().mean() + 1 if len(annual) > 1 else 1.03
                 last_year = annual['year'].max()
                 future_years = list(range(last_year + 1, last_year + 11))
@@ -84,12 +86,15 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
                 full_df['type'] = ['Historical'] * len(annual) + ['Projected'] * len(proj_df)
                 full_df['monthly_cost'] = full_df['price'] * usage_kwh
                 
+                # Charts
                 col1, col2 = st.columns(2)
                 with col1:
-                    fig_price = px.line(full_df, x='year', y='price', color='type', title="Electricity Price Trend ($ per kWh)")
+                    fig_price = px.line(full_df, x='year', y='price', color='type',
+                                      title="Electricity Price Trend ($ per kWh)")
                     st.plotly_chart(fig_price, use_container_width=True)
                 with col2:
-                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type', title="Your Projected Monthly Bill ($)")
+                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type',
+                                      title="Your Projected Monthly Bill ($)")
                     st.plotly_chart(fig_cost, use_container_width=True)
                 
                 st.success(f"✅ Report ready for {utility} in {state}")
@@ -97,7 +102,7 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
                 st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                 st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
                 
-                # PDF
+                # PDF Download
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", 'B', 16)
