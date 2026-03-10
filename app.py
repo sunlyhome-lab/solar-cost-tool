@@ -15,12 +15,10 @@ address = st.text_input("Prospect's Address (street, city, state)", value="2701 
 utility = st.text_input("Utility Company (e.g. Oncor, TXU, CenterPoint)", value="Ameren")
 avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, value=170.0, step=5.0)
 
-# Securely load the NEW key from Streamlit Secrets (never visible on GitHub)
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
 if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
     with st.spinner("Fetching real EIA data and building your report..."):
-        # Get state from address
         geolocator = Nominatim(user_agent="solar_consultant_tool")
         state = "IL"
         try:
@@ -32,12 +30,10 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
         except:
             pass
 
-        # Dynamic dates - last 10 years
         today = date.today()
         start_date = f"{today.year - 10}-01-01"
         end_date = today.strftime("%Y-%m-%d")
 
-        # EIA API call (exact format from official 2026 documentation)
         url = (
             f"https://api.eia.gov/v2/electricity/retail-sales/data/"
             f"?api_key={EIA_API_KEY}"
@@ -55,26 +51,19 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
             response = requests.get(url, timeout=15)
             data = response.json()
 
-            if response.status_code != 200:
-                st.error(f"EIA API connection error ({response.status_code}).")
-                st.caption(f"Technical detail: {response.text[:600]}")
-            elif 'error' in data:
-                st.error(f"EIA API error: {data.get('error')}")
-            elif not data.get('response', {}).get('data'):
-                st.error("No price data found for this state right now. Try again in a few minutes.")
+            if response.status_code != 200 or 'error' in data or not data.get('response', {}).get('data'):
+                st.error("Could not fetch data right now. Try again in a minute.")
             else:
-                # Success! Build the report
                 df = pd.DataFrame(data['response']['data'])
                 df['period'] = pd.to_datetime(df['period'])
                 df = df.sort_values('period')
-                df['price'] = pd.to_numeric(df['price']) / 100          # EIA returns cents
+                df['price'] = pd.to_numeric(df['price']) / 100
                 df['year'] = df['period'].dt.year
                 annual = df.groupby('year')['price'].mean().reset_index()
                 
                 current_price = annual['price'].iloc[-1]
                 usage_kwh = avg_bill / current_price
                 
-                # Project 10 years forward using real historical trend
                 avg_annual_increase = annual['price'].pct_change().mean() + 1 if len(annual) > 1 else 1.03
                 last_year = annual['year'].max()
                 future_years = list(range(last_year + 1, last_year + 11))
@@ -86,43 +75,79 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
                 full_df['type'] = ['Historical'] * len(annual) + ['Projected'] * len(proj_df)
                 full_df['monthly_cost'] = full_df['price'] * usage_kwh
                 
+                # NEW: Year-over-year % change
+                full_df['pct_change'] = full_df['price'].pct_change() * 100
+                full_df['pct_change'] = full_df['pct_change'].round(1)
+
                 # Charts
                 col1, col2 = st.columns(2)
                 with col1:
-                    fig_price = px.line(full_df, x='year', y='price', color='type',
-                                      title="Electricity Price Trend ($ per kWh)")
+                    fig_price = px.line(full_df, x='year', y='price', color='type', title="Electricity Price Trend ($ per kWh)")
                     st.plotly_chart(fig_price, use_container_width=True)
                 with col2:
-                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type',
-                                      title="Your Projected Monthly Bill ($)")
+                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type', title="Your Projected Monthly Bill ($)")
                     st.plotly_chart(fig_cost, use_container_width=True)
                 
                 st.success(f"✅ Report ready for {utility} in {state}")
                 st.write(f"**Current price:** ${current_price:.3f} per kWh")
                 st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                 st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
-                
-                # PDF Download
+
+                # ================== PDF WITH ENHANCEMENTS ==================
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", 'B', 16)
-                pdf.cell(0, 10, "20-Year Electricity Cost Forecast Report", ln=1, align='C')
+                pdf.cell(0, 10, "YOUR 20-YEAR ELECTRICITY COST FORECAST", ln=1, align='C')
                 pdf.set_font("Arial", size=12)
-                pdf.ln(10)
-                pdf.cell(0, 8, f"Address: {address}", ln=1)
-                pdf.cell(0, 8, f"Utility: {utility}   |   State: {state}", ln=1)
-                pdf.cell(0, 8, f"Average Monthly Bill: ${avg_bill:.2f}", ln=1)
                 pdf.ln(5)
-                pdf.cell(0, 8, "Year | Price ($/kWh) | Monthly Cost ($)", ln=1)
+                pdf.cell(0, 8, f"Address: {address}   |   Utility: {utility}   |   State: {state}", ln=1)
+                pdf.cell(0, 8, f"Average Monthly Bill Today: ${avg_bill:.2f}   |   Generated: {date.today().strftime('%B %d, %Y')}", ln=1)
+                pdf.ln(10)
+
+                # Persuasive intro (like competitor but more professional)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 8, "The truth most homeowners never see:", ln=1)
+                pdf.set_font("Arial", size=11)
+                pdf.multi_cell(0, 8, "Most people hope rates won't go up. You asked for the numbers. Here they are — based on real EIA data and proven trends. This is exactly how much you will pay if you do nothing.")
+                pdf.ln(5)
+
+                # Table header
+                pdf.set_font("Arial", 'B', 11)
+                pdf.cell(0, 8, "Year | Price ($/kWh) | Monthly Cost ($) | YoY Change (%)", ln=1)
                 pdf.set_font("Arial", size=10)
-                for _, row in full_df.iterrows():
-                    pdf.cell(0, 8, f"{int(row['year'])} | ${row['price']:.3f} | ${row['monthly_cost']:.2f} ({row['type']})", ln=1)
                 
+                for _, row in full_df.iterrows():
+                    pct_str = "N/A" if pd.isna(row['pct_change']) else f"{row['pct_change']:.1f}%"
+                    pdf.cell(0, 8, f"{int(row['year'])} | ${row['price']:.3f} | ${row['monthly_cost']:.2f} | {pct_str}", ln=1)
+
+                # Summary calculations
+                current_cost = full_df[full_df['type'] == 'Historical'].iloc[-1]['monthly_cost']
+                ten_year_cost = full_df.iloc[-11]['monthly_cost']   # 10 years from now
+                twenty_year_cost = full_df.iloc[-1]['monthly_cost']
+                ten_year_rise = ((ten_year_cost / current_cost) - 1) * 100
+                twenty_year_rise = ((twenty_year_cost / current_cost) - 1) * 100
+
+                pdf.ln(10)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 8, "SUMMARY – THE REAL COST OF DOING NOTHING", ln=1)
+                pdf.set_font("Arial", size=11)
+                pdf.cell(0, 8, f"Next 10 years (2026–2036): Your bill will rise {ten_year_rise:.1f}% → ${ten_year_cost:.2f}/month", ln=1)
+                pdf.cell(0, 8, f"Full 20 years: Cumulative increase of {twenty_year_rise:.1f}% → ${twenty_year_cost:.2f}/month", ln=1)
+                pdf.ln(5)
+                pdf.multi_cell(0, 8, "That extra money is a college fund, a rental property down payment, or retirement savings — right now it’s going to the utility monopoly.")
+                pdf.ln(10)
+
+                # Strong call-to-action
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 8, "Ready to stop the bleeding?", ln=1)
+                pdf.set_font("Arial", size=11)
+                pdf.multi_cell(0, 8, "You now have the 20-year forecast. Let’s build your exit strategy. I have an assessment specialist ready to model the highest-performing solar option for your home. If the math doesn’t win, you don’t switch. Simple as that.")
+
                 pdf_output = io.BytesIO(pdf.output(dest='S').encode('latin1'))
                 st.download_button(
                     label="📥 Download Professional PDF Report",
                     data=pdf_output,
-                    file_name=f"Electricity_Forecast_{utility.replace(' ', '_')}.pdf",
+                    file_name=f"20_Year_Forecast_{utility.replace(' ', '_')}.pdf",
                     mime="application/pdf"
                 )
         except Exception as e:
