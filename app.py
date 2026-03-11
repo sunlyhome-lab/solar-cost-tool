@@ -17,8 +17,13 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* FORCE FULL-WIDTH CHARTS - stronger than before */
-        div[data-testid="stPlotlyChart"] { width: 100% !important; max-width: 100% !important; margin: 0 auto !important; }
+        /* FORCE FULL-WIDTH CHARTS - strongest possible version */
+        div[data-testid="stPlotlyChart"] { 
+            width: 100% !important; 
+            max-width: 100% !important; 
+            margin-left: 0 !important; 
+            margin-right: 0 !important; 
+        }
         .js-plotly-plot, .plotly { width: 100% !important; }
         
         /* Transparent inputs */
@@ -119,8 +124,7 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # ================== FULL-WIDTH + PERFECTLY READABLE CHARTS ==================
-                    # Price Trend
+                    # FULL-WIDTH + PERFECTLY READABLE CHARTS
                     fig_price = px.line(full_df, x='year', y='price', color='type', 
                                       title="Electricity Price Trend ($ per kWh)",
                                       line_shape="linear")
@@ -134,7 +138,6 @@ with col2:
                                           title_font=dict(size=22, color="#000000"),
                                           legend=dict(font=dict(size=14)))
 
-                    # Projected Monthly Bill
                     fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type',
                                      title="Your Projected Monthly Bill ($)",
                                      line_shape="linear")
@@ -148,15 +151,15 @@ with col2:
                                          title_font=dict(size=22, color="#000000"),
                                          legend=dict(font=dict(size=14)))
 
-                    st.plotly_chart(fig_price, use_container_width=True, key="price_chart")
-                    st.plotly_chart(fig_cost, use_container_width=True, key="cost_chart")
+                    st.plotly_chart(fig_price, use_container_width=True, key="price_chart_full")
+                    st.plotly_chart(fig_cost, use_container_width=True, key="cost_chart_full")
                     
                     st.success(f"✅ Report ready for {utility} in {state}")
                     st.write(f"**Current price:** ${current_price:.3f} per kWh")
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # ================== PROFESSIONAL PDF ==================
+                    # PDF (unchanged)
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
