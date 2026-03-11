@@ -7,19 +7,22 @@ from fpdf import FPDF
 import io
 from datetime import date
 
-# ================== SUNLY HOME BRANDING + LIGHT THEME ==================
+# ================== SUNLY HOME BRANDING + FORCED WHITE BACKGROUND ==================
 st.set_page_config(page_title="Historical and Projected Electricity Cost", layout="centered", initial_sidebar_state="collapsed")
 
-# Force light/white background so your logo (black text) is perfectly visible
+# FORCE WHITE/LIGHT THEME (fixes logo blending + removes dark mode)
 st.markdown("""
     <style>
-        .stApp { background-color: #ffffff; color: #000000; }
-        .st-emotion-cache-1y4p8pa { background-color: #ffffff; }
-        .stMarkdown { color: #000000; }
+        [data-testid="stAppViewContainer"] { background-color: #ffffff !important; }
+        [data-testid="stHeader"] { background-color: #ffffff !important; }
+        [data-testid="stSidebar"] { background-color: #ffffff !important; }
+        .stApp { background-color: #ffffff !important; color: #000000 !important; }
+        .stMarkdown, .st-emotion-cache-1y4p8pa, p, h1, h2, h3, label { color: #000000 !important; }
+        .stButton > button { background-color: #0066CC !important; color: white !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# Display Sunly Home logo (centered, perfect on white)
+# Display Sunly Home logo (perfect on white background)
 st.image("sunly-logo.png", width=380)
 
 st.title("Historical and Projected Electricity Cost")
@@ -105,7 +108,7 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
                 st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                 st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                # ================== FIXED PDF (no special characters) ==================
+                # ================== PDF (safe encoding - no errors) ==================
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", 'B', 16)
@@ -151,10 +154,9 @@ if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
                 pdf.set_font("Arial", size=11)
                 pdf.multi_cell(0, 8, "You now have the 20-year forecast. Lets build your exit strategy with Sunly Home. I have an assessment specialist ready to model the highest-performing solar + battery option for your home. If the math doesnt win, you dont switch. Simple as that.")
 
-                # Safe encoding (fixes the bullet / latin-1 error)
                 pdf_output = io.BytesIO(pdf.output(dest='S').encode('latin-1', errors='replace'))
                 st.download_button(
-                    label="Download Professional PDF Report",
+                    label="📥 Download Professional PDF Report",
                     data=pdf_output,
                     file_name=f"Sunly_Home_20_Year_Forecast_{utility.replace(' ', '_')}.pdf",
                     mime="application/pdf"
