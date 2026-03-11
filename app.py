@@ -10,7 +10,6 @@ from datetime import date
 # ================== SUNLY HOME BRANDING + WHITE BACKGROUND ==================
 st.set_page_config(page_title="Past & Projected Electricity Cost", layout="centered", initial_sidebar_state="collapsed")
 
-# FORCE CLEAN WHITE BACKGROUND + ENHANCED INPUTS
 st.markdown("""
     <style>
         [data-testid="stAppViewContainer"] { background-color: #ffffff !important; }
@@ -18,7 +17,7 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* Transparent/light inputs with blue border - lettering pops */
+        /* Transparent inputs with blue border */
         .stTextInput > div > div > input,
         .stNumberInput > div > div > input {
             background-color: rgba(255,255,255,0.95) !important;
@@ -27,8 +26,8 @@ st.markdown("""
             border-radius: 8px !important;
         }
         
-        /* Centered blue button with bold white text */
-        .stButton > button {
+        /* Blue buttons with bold white text */
+        .stButton > button, .stDownloadButton > button {
             background-color: #0066CC !important;
             color: white !important;
             font-weight: bold !important;
@@ -40,12 +39,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# CENTERED SUNLY HOME LOGO
+# CENTERED LOGO
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image("sunly-logo.png", width=380)
 
-# UPDATED TITLE (fits on one line)
 st.title("Past & Projected Electricity Cost")
 st.markdown("**Real EIA data • 10 years back + 10 years forward • Powered by Sunly Home**")
 
@@ -55,7 +53,6 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED BUTTON
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
@@ -118,20 +115,24 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        fig_price = px.line(full_df, x='year', y='price', color='type', title="Electricity Price Trend ($ per kWh)")
-                        st.plotly_chart(fig_price, use_container_width=True)
-                    with col2:
-                        fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type', title="Your Projected Monthly Bill ($)")
-                        st.plotly_chart(fig_cost, use_container_width=True)
+                    # ================== BIGGER STACKED CHARTS (every year shown) ==================
+                    fig_price = px.line(full_df, x='year', y='price', color='type', title="Electricity Price Trend ($ per kWh)")
+                    fig_price.update_xaxes(dtick=1, tickangle=45)
+                    fig_price.update_layout(height=500)
+                    
+                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type', title="Your Projected Monthly Bill ($)")
+                    fig_cost.update_xaxes(dtick=1, tickangle=45)
+                    fig_cost.update_layout(height=500)
+                    
+                    st.plotly_chart(fig_price, use_container_width=True)
+                    st.plotly_chart(fig_cost, use_container_width=True)
                     
                     st.success(f"✅ Report ready for {utility} in {state}")
                     st.write(f"**Current price:** ${current_price:.3f} per kWh")
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # PDF (safe encoding)
+                    # ================== PROFESSIONAL PDF WITH PROPER TABLE ==================
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
@@ -147,14 +148,22 @@ with col2:
                     pdf.cell(0, 8, "The truth most homeowners never see:", ln=1)
                     pdf.set_font("Arial", size=11)
                     pdf.multi_cell(0, 8, "Most people hope rates won't go up. You asked for the numbers. Here they are - based on real EIA data and proven trends. This is exactly how much you will pay if you do nothing.")
-                    pdf.ln(5)
+                    pdf.ln(10)
 
+                    # Professional table with borders and aligned columns
                     pdf.set_font("Arial", 'B', 11)
-                    pdf.cell(0, 8, "Year | Price ($/kWh) | Monthly Cost ($) | YoY Change (%)", ln=1)
+                    pdf.cell(25, 8, "Year", 1, 0, 'C')
+                    pdf.cell(40, 8, "Price ($/kWh)", 1, 0, 'C')
+                    pdf.cell(45, 8, "Monthly Cost ($)", 1, 0, 'C')
+                    pdf.cell(35, 8, "YoY Change (%)", 1, 1, 'C')
+                    
                     pdf.set_font("Arial", size=10)
                     for _, row in full_df.iterrows():
                         pct_str = "N/A" if pd.isna(row['pct_change']) else f"{row['pct_change']:.1f}%"
-                        pdf.cell(0, 8, f"{int(row['year'])} | ${row['price']:.3f} | ${row['monthly_cost']:.2f} | {pct_str}", ln=1)
+                        pdf.cell(25, 8, str(int(row['year'])), 1, 0, 'C')
+                        pdf.cell(40, 8, f"${row['price']:.3f}", 1, 0, 'C')
+                        pdf.cell(45, 8, f"${row['monthly_cost']:.2f}", 1, 0, 'C')
+                        pdf.cell(35, 8, pct_str, 1, 1, 'C')
 
                     current_cost = full_df[full_df['type'] == 'Historical'].iloc[-1]['monthly_cost']
                     ten_year_cost = full_df.iloc[-11]['monthly_cost']
@@ -178,12 +187,14 @@ with col2:
                     pdf.multi_cell(0, 8, "You now have the 20-year forecast. Lets build your exit strategy with Sunly Home. I have an assessment specialist ready to model the highest-performing solar + battery option for your home. If the math doesnt win, you dont switch. Simple as that.")
 
                     pdf_output = io.BytesIO(pdf.output(dest='S').encode('latin-1', errors='replace'))
-                    st.download_button(
-                        label="📥 Download Professional PDF Report",
-                        data=pdf_output,
-                        file_name=f"Sunly_Home_20_Year_Forecast_{utility.replace(' ', '_')}.pdf",
-                        mime="application/pdf"
-                    )
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        st.download_button(
+                            label="📥 Download Professional PDF Report",
+                            data=pdf_output,
+                            file_name=f"Sunly_Home_20_Year_Forecast_{utility.replace(' ', '_')}.pdf",
+                            mime="application/pdf"
+                        )
             except Exception as e:
                 st.error("Something unexpected happened.")
                 st.caption(f"Technical detail: {str(e)}")
