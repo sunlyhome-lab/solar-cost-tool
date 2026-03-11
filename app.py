@@ -17,13 +17,8 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* FORCE FULL-WIDTH CHARTS - strongest possible version */
-        div[data-testid="stPlotlyChart"] { 
-            width: 100% !important; 
-            max-width: 100% !important; 
-            margin-left: 0 !important; 
-            margin-right: 0 !important; 
-        }
+        /* FORCE FULL LANDSCAPE WIDTH */
+        div[data-testid="stPlotlyChart"] { width: 100% !important; max-width: 100% !important; }
         .js-plotly-plot, .plotly { width: 100% !important; }
         
         /* Transparent inputs */
@@ -124,7 +119,7 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # FULL-WIDTH + PERFECTLY READABLE CHARTS
+                    # LANDSCAPE FULL-WIDTH CHARTS - NO TOOLBAR
                     fig_price = px.line(full_df, x='year', y='price', color='type', 
                                       title="Electricity Price Trend ($ per kWh)",
                                       line_shape="linear")
@@ -133,7 +128,7 @@ with col2:
                     fig_price.add_vline(x=last_year, line_dash="dash", line_color="red", annotation_text="Today", annotation_position="top right")
                     fig_price.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
                     fig_price.update_yaxes(title="Price ($/kWh)", tickfont=dict(size=14))
-                    fig_price.update_layout(height=750, margin=dict(l=40, r=40, t=100, b=180),
+                    fig_price.update_layout(height=500, margin=dict(l=40, r=40, t=80, b=120),
                                           plot_bgcolor="white", paper_bgcolor="white",
                                           title_font=dict(size=22, color="#000000"),
                                           legend=dict(font=dict(size=14)))
@@ -146,13 +141,13 @@ with col2:
                     fig_cost.add_vline(x=last_year, line_dash="dash", line_color="red")
                     fig_cost.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
                     fig_cost.update_yaxes(title="Monthly Cost ($)", tickfont=dict(size=14))
-                    fig_cost.update_layout(height=750, margin=dict(l=40, r=40, t=100, b=180),
+                    fig_cost.update_layout(height=500, margin=dict(l=40, r=40, t=80, b=120),
                                          plot_bgcolor="white", paper_bgcolor="white",
                                          title_font=dict(size=22, color="#000000"),
                                          legend=dict(font=dict(size=14)))
 
-                    st.plotly_chart(fig_price, use_container_width=True, key="price_chart_full")
-                    st.plotly_chart(fig_cost, use_container_width=True, key="cost_chart_full")
+                    st.plotly_chart(fig_price, use_container_width=True, config={"displayModeBar": False})
+                    st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False})
                     
                     st.success(f"✅ Report ready for {utility} in {state}")
                     st.write(f"**Current price:** ${current_price:.3f} per kWh")
