@@ -17,8 +17,12 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* Force charts to full width - this fixes the narrow issue */
-        div[data-testid="stPlotlyChart"] { width: 100% !important; max-width: 100% !important; }
+        /* FORCE FULL-WIDTH CHARTS - this is the fix */
+        div[data-testid="stPlotlyChart"] { 
+            width: 100% !important; 
+            max-width: 100% !important; 
+            margin: 0 auto !important; 
+        }
         .js-plotly-plot, .plotly { width: 100% !important; }
         
         /* Transparent inputs */
@@ -119,8 +123,7 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # ================== FULL-WIDTH + ULTRA-READABLE CHARTS ==================
-                    # Price Trend
+                    # ================== FULL-WIDTH + ULTRA-READABLE CHARTS (final fix) ==================
                     fig_price = px.line(full_df, x='year', y='price', color='type', 
                                       title="Electricity Price Trend ($ per kWh)",
                                       line_shape="linear")
@@ -130,11 +133,10 @@ with col2:
                                       annotation_text="Today", annotation_position="top right")
                     fig_price.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
                     fig_price.update_yaxes(title="Price ($/kWh)", tickfont=dict(size=14))
-                    fig_price.update_layout(height=720, margin=dict(l=50, r=50, t=80, b=180),
+                    fig_price.update_layout(height=750, margin=dict(l=50, r=50, t=100, b=180),
                                           plot_bgcolor="white", paper_bgcolor="white",
-                                          legend=dict(font=dict(size=14)))
+                                          legend=dict(font=dict(size=14)), title_font=dict(size=20))
 
-                    # Projected Monthly Bill
                     fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type',
                                      title="Your Projected Monthly Bill ($)",
                                      line_shape="linear")
@@ -143,9 +145,9 @@ with col2:
                     fig_cost.add_vline(x=last_year, line_dash="dash", line_color="red")
                     fig_cost.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
                     fig_cost.update_yaxes(title="Monthly Cost ($)", tickfont=dict(size=14))
-                    fig_cost.update_layout(height=720, margin=dict(l=50, r=50, t=80, b=180),
+                    fig_cost.update_layout(height=750, margin=dict(l=50, r=50, t=100, b=180),
                                          plot_bgcolor="white", paper_bgcolor="white",
-                                         legend=dict(font=dict(size=14)))
+                                         legend=dict(font=dict(size=14)), title_font=dict(size=20))
 
                     st.plotly_chart(fig_price, use_container_width=True)
                     st.plotly_chart(fig_cost, use_container_width=True)
@@ -155,7 +157,7 @@ with col2:
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # ================== PROFESSIONAL PDF (unchanged) ==================
+                    # ================== PROFESSIONAL PDF ==================
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
