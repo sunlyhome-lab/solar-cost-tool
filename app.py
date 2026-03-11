@@ -17,7 +17,7 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* Transparent inputs with blue border */
+        /* Transparent inputs */
         .stTextInput > div > div > input,
         .stNumberInput > div > div > input {
             background-color: rgba(255,255,255,0.95) !important;
@@ -26,7 +26,7 @@ st.markdown("""
             border-radius: 8px !important;
         }
         
-        /* Blue buttons with bold white text */
+        /* Blue buttons */
         .stButton > button, .stDownloadButton > button {
             background-color: #0066CC !important;
             color: white !important;
@@ -115,14 +115,14 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # ================== BIGGER STACKED CHARTS (every year shown) ==================
+                    # ================== FULL-WIDTH, TALLER CHARTS (every year clearly visible) ==================
                     fig_price = px.line(full_df, x='year', y='price', color='type', title="Electricity Price Trend ($ per kWh)")
-                    fig_price.update_xaxes(dtick=1, tickangle=45)
-                    fig_price.update_layout(height=500)
+                    fig_price.update_xaxes(dtick=1, tickangle=-45, title="Year")
+                    fig_price.update_layout(height=650, margin=dict(l=40, r=40, t=80, b=140))
                     
                     fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type', title="Your Projected Monthly Bill ($)")
-                    fig_cost.update_xaxes(dtick=1, tickangle=45)
-                    fig_cost.update_layout(height=500)
+                    fig_cost.update_xaxes(dtick=1, tickangle=-45, title="Year")
+                    fig_cost.update_layout(height=650, margin=dict(l=40, r=40, t=80, b=140))
                     
                     st.plotly_chart(fig_price, use_container_width=True)
                     st.plotly_chart(fig_cost, use_container_width=True)
@@ -132,7 +132,7 @@ with col2:
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # ================== PROFESSIONAL PDF WITH PROPER TABLE ==================
+                    # ================== PROFESSIONAL PDF ==================
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
@@ -150,7 +150,6 @@ with col2:
                     pdf.multi_cell(0, 8, "Most people hope rates won't go up. You asked for the numbers. Here they are - based on real EIA data and proven trends. This is exactly how much you will pay if you do nothing.")
                     pdf.ln(10)
 
-                    # Professional table with borders and aligned columns
                     pdf.set_font("Arial", 'B', 11)
                     pdf.cell(25, 8, "Year", 1, 0, 'C')
                     pdf.cell(40, 8, "Price ($/kWh)", 1, 0, 'C')
