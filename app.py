@@ -19,6 +19,17 @@ st.markdown("""
         
         /* Full-width landscape charts */
         .stPlot { width: 100% !important; max-width: 100% !important; }
+        
+        /* Sunly Blue buttons */
+        .stButton > button, .stDownloadButton > button {
+            background-color: #0066CC !important;
+            color: white !important;
+            font-weight: bold !important;
+            font-size: 18px !important;
+            padding: 12px 30px !important;
+            border-radius: 8px !important;
+            width: 100% !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -38,7 +49,7 @@ EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🚀 Generate 20-Year Forecast Report", type="primary"):
+    if st.button("Forecast Report"):
         with st.spinner("Fetching real EIA data and building your report..."):
             geolocator = Nominatim(user_agent="solar_consultant_tool")
             state = "IL"
@@ -98,38 +109,45 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # ================== LANDSCAPE FULL-WIDTH MATPLOTLIB CHARTS ==================
+                    # ================== BIGGER LANDSCAPE MATPLOTLIB CHARTS ==================
                     # Price Trend
-                    fig1, ax1 = plt.subplots(figsize=(12, 5))
-                    ax1.plot(full_df[full_df['type']=='Historical']['year'], 
-                             full_df[full_df['type']=='Historical']['price'], 
-                             label='Historical', color='blue', linewidth=4)
-                    ax1.plot(full_df[full_df['type']=='Projected']['year'], 
-                             full_df[full_df['type']=='Projected']['price'], 
-                             label='Projected', color='#FF6600', linestyle='--', linewidth=4)
+                    fig1, ax1 = plt.subplots(figsize=(14, 6))  # Bigger default size
+                    ax1.plot(full_df[full_df['type']=='Historical']['year'], full_df[full_df['type']=='Historical']['price'], label='Historical', color='blue', linewidth=4)
+                    ax1.plot(full_df[full_df['type']=='Projected']['year'], full_df[full_df['type']=='Projected']['price'], label='Projected', color='#FF6600', linestyle='--', linewidth=4)
                     ax1.axvline(x=last_year, color='red', linestyle='--', label='Today')
+                    
+                    # Total 10-year increase text box
+                    hist_10yr = full_df[full_df['type']=='Historical'].tail(10)
+                    total_increase = ((hist_10yr['price'].iloc[-1] / hist_10yr['price'].iloc[0]) - 1) * 100
+                    ax1.text(0.02, 0.95, f"Last 10 Years Total Increase: {total_increase:.1f}%", 
+                             transform=ax1.transAxes, fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
+                    
                     ax1.set_title("Electricity Price Trend ($ per kWh)", fontsize=18, fontweight='bold')
                     ax1.set_xlabel("Year", fontsize=14)
                     ax1.set_ylabel("Price ($/kWh)", fontsize=14)
                     ax1.legend(fontsize=12)
                     ax1.grid(True, alpha=0.3)
+                    ax1.set_xticks(range(int(full_df['year'].min()), int(full_df['year'].max()) + 1))  # Every whole year
                     plt.xticks(rotation=45)
                     st.pyplot(fig1, use_container_width=True)
 
                     # Projected Monthly Bill
-                    fig2, ax2 = plt.subplots(figsize=(12, 5))
-                    ax2.plot(full_df[full_df['type']=='Historical']['year'], 
-                             full_df[full_df['type']=='Historical']['monthly_cost'], 
-                             label='Historical', color='blue', linewidth=4)
-                    ax2.plot(full_df[full_df['type']=='Projected']['year'], 
-                             full_df[full_df['type']=='Projected']['monthly_cost'], 
-                             label='Projected', color='#FF6600', linestyle='--', linewidth=4)
+                    fig2, ax2 = plt.subplots(figsize=(14, 6))
+                    ax2.plot(full_df[full_df['type']=='Historical']['year'], full_df[full_df['type']=='Historical']['monthly_cost'], label='Historical', color='blue', linewidth=4)
+                    ax2.plot(full_df[full_df['type']=='Projected']['year'], full_df[full_df['type']=='Projected']['monthly_cost'], label='Projected', color='#FF6600', linestyle='--', linewidth=4)
                     ax2.axvline(x=last_year, color='red', linestyle='--')
+                    
+                    # Total 10-year increase text box (same for bill)
+                    total_increase_bill = ((hist_10yr['monthly_cost'].iloc[-1] / hist_10yr['monthly_cost'].iloc[0]) - 1) * 100
+                    ax2.text(0.02, 0.95, f"Last 10 Years Total Increase: {total_increase_bill:.1f}%", 
+                             transform=ax2.transAxes, fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
+                    
                     ax2.set_title("Your Projected Monthly Bill ($)", fontsize=18, fontweight='bold')
                     ax2.set_xlabel("Year", fontsize=14)
                     ax2.set_ylabel("Monthly Cost ($)", fontsize=14)
                     ax2.legend(fontsize=12)
                     ax2.grid(True, alpha=0.3)
+                    ax2.set_xticks(range(int(full_df['year'].min()), int(full_df['year'].max()) + 1))
                     plt.xticks(rotation=45)
                     st.pyplot(fig2, use_container_width=True)
                     
@@ -138,7 +156,7 @@ with col2:
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # ================== PROFESSIONAL PDF ==================
+                    # PDF (unchanged)
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
@@ -195,7 +213,7 @@ with col2:
                     col1, col2, col3 = st.columns([1, 2, 1])
                     with col2:
                         st.download_button(
-                            label="📥 Download Professional PDF Report",
+                            label="Download Report",
                             data=pdf_output,
                             file_name=f"Sunly_Home_20_Year_Forecast_{utility.replace(' ', '_')}.pdf",
                             mime="application/pdf"
