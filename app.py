@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
 from geopy.geocoders import Nominatim
 from fpdf import FPDF
 import io
@@ -17,29 +17,8 @@ st.markdown("""
         .stApp { background-color: #ffffff !important; color: #000000 !important; }
         .stMarkdown, p, h1, h2, label { color: #000000 !important; }
         
-        /* FORCE FULL LANDSCAPE WIDTH */
-        div[data-testid="stPlotlyChart"] { width: 100% !important; max-width: 100% !important; }
-        .js-plotly-plot, .plotly { width: 100% !important; }
-        
-        /* Transparent inputs */
-        .stTextInput > div > div > input,
-        .stNumberInput > div > div > input {
-            background-color: rgba(255,255,255,0.95) !important;
-            color: #000000 !important;
-            border: 2px solid #0066CC !important;
-            border-radius: 8px !important;
-        }
-        
-        /* Blue buttons */
-        .stButton > button, .stDownloadButton > button {
-            background-color: #0066CC !important;
-            color: white !important;
-            font-weight: bold !important;
-            font-size: 18px !important;
-            padding: 12px 30px !important;
-            border-radius: 8px !important;
-            width: 100% !important;
-        }
+        /* Full-width landscape charts */
+        .stPlot { width: 100% !important; max-width: 100% !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -119,42 +98,47 @@ with col2:
                     full_df['pct_change'] = full_df['price'].pct_change() * 100
                     full_df['pct_change'] = full_df['pct_change'].round(1)
 
-                    # LANDSCAPE FULL-WIDTH CHARTS - NO TOOLBAR
-                    fig_price = px.line(full_df, x='year', y='price', color='type', 
-                                      title="Electricity Price Trend ($ per kWh)",
-                                      line_shape="linear")
-                    fig_price.update_traces(line=dict(width=5), selector=dict(name="Historical"))
-                    fig_price.update_traces(line=dict(width=5, dash="dash", color="#FF6600"), selector=dict(name="Projected"))
-                    fig_price.add_vline(x=last_year, line_dash="dash", line_color="red", annotation_text="Today", annotation_position="top right")
-                    fig_price.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
-                    fig_price.update_yaxes(title="Price ($/kWh)", tickfont=dict(size=14))
-                    fig_price.update_layout(height=500, margin=dict(l=40, r=40, t=80, b=120),
-                                          plot_bgcolor="white", paper_bgcolor="white",
-                                          title_font=dict(size=22, color="#000000"),
-                                          legend=dict(font=dict(size=14)))
+                    # ================== LANDSCAPE FULL-WIDTH MATPLOTLIB CHARTS ==================
+                    # Price Trend
+                    fig1, ax1 = plt.subplots(figsize=(12, 5))
+                    ax1.plot(full_df[full_df['type']=='Historical']['year'], 
+                             full_df[full_df['type']=='Historical']['price'], 
+                             label='Historical', color='blue', linewidth=4)
+                    ax1.plot(full_df[full_df['type']=='Projected']['year'], 
+                             full_df[full_df['type']=='Projected']['price'], 
+                             label='Projected', color='#FF6600', linestyle='--', linewidth=4)
+                    ax1.axvline(x=last_year, color='red', linestyle='--', label='Today')
+                    ax1.set_title("Electricity Price Trend ($ per kWh)", fontsize=18, fontweight='bold')
+                    ax1.set_xlabel("Year", fontsize=14)
+                    ax1.set_ylabel("Price ($/kWh)", fontsize=14)
+                    ax1.legend(fontsize=12)
+                    ax1.grid(True, alpha=0.3)
+                    plt.xticks(rotation=45)
+                    st.pyplot(fig1, use_container_width=True)
 
-                    fig_cost = px.line(full_df, x='year', y='monthly_cost', color='type',
-                                     title="Your Projected Monthly Bill ($)",
-                                     line_shape="linear")
-                    fig_cost.update_traces(line=dict(width=5), selector=dict(name="Historical"))
-                    fig_cost.update_traces(line=dict(width=5, dash="dash", color="#FF6600"), selector=dict(name="Projected"))
-                    fig_cost.add_vline(x=last_year, line_dash="dash", line_color="red")
-                    fig_cost.update_xaxes(dtick=1, tickangle=-60, title="Year", tickfont=dict(size=14))
-                    fig_cost.update_yaxes(title="Monthly Cost ($)", tickfont=dict(size=14))
-                    fig_cost.update_layout(height=500, margin=dict(l=40, r=40, t=80, b=120),
-                                         plot_bgcolor="white", paper_bgcolor="white",
-                                         title_font=dict(size=22, color="#000000"),
-                                         legend=dict(font=dict(size=14)))
-
-                    st.plotly_chart(fig_price, use_container_width=True, config={"displayModeBar": False})
-                    st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False})
+                    # Projected Monthly Bill
+                    fig2, ax2 = plt.subplots(figsize=(12, 5))
+                    ax2.plot(full_df[full_df['type']=='Historical']['year'], 
+                             full_df[full_df['type']=='Historical']['monthly_cost'], 
+                             label='Historical', color='blue', linewidth=4)
+                    ax2.plot(full_df[full_df['type']=='Projected']['year'], 
+                             full_df[full_df['type']=='Projected']['monthly_cost'], 
+                             label='Projected', color='#FF6600', linestyle='--', linewidth=4)
+                    ax2.axvline(x=last_year, color='red', linestyle='--')
+                    ax2.set_title("Your Projected Monthly Bill ($)", fontsize=18, fontweight='bold')
+                    ax2.set_xlabel("Year", fontsize=14)
+                    ax2.set_ylabel("Monthly Cost ($)", fontsize=14)
+                    ax2.legend(fontsize=12)
+                    ax2.grid(True, alpha=0.3)
+                    plt.xticks(rotation=45)
+                    st.pyplot(fig2, use_container_width=True)
                     
                     st.success(f"✅ Report ready for {utility} in {state}")
                     st.write(f"**Current price:** ${current_price:.3f} per kWh")
                     st.write(f"**Your estimated monthly usage:** {usage_kwh:.0f} kWh")
                     st.write(f"**Avg annual increase:** {(avg_annual_increase-1)*100:.1f}%")
 
-                    # PDF (unchanged)
+                    # ================== PROFESSIONAL PDF ==================
                     pdf = FPDF()
                     pdf.add_page()
                     pdf.set_font("Arial", 'B', 16)
