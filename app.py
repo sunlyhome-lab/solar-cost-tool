@@ -20,7 +20,7 @@ st.markdown("""
         /* Full-width landscape charts */
         .stPlot { width: 100% !important; max-width: 100% !important; }
         
-        /* Sunly Blue buttons with black border */
+        /* Sunly Blue buttons with black border + bold white text */
         .stButton > button, .stDownloadButton > button {
             background-color: #0066CC !important;
             color: white !important;
@@ -29,7 +29,6 @@ st.markdown("""
             padding: 12px 30px !important;
             border-radius: 8px !important;
             border: 2px solid #000000 !important;
-            width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -53,8 +52,8 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED BUTTON (perfectly aligned under logo + title)
-col1, col2, col3 = st.columns([1, 3, 1])
+# PERFECTLY CENTERED BUTTON (narrow column so it sits dead-center under logo)
+col1, col2, col3 = st.columns([2, 1, 2])
 with col2:
     if st.button("Generate Report"):
         with st.spinner("Fetching real EIA data and building your report..."):
