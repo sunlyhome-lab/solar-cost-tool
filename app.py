@@ -8,7 +8,7 @@ import io
 from datetime import date
 
 # ================== SUNLY HOME BRANDING + WHITE BACKGROUND ==================
-st.set_page_config(page_title="Past & Projected Electricity Cost", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="EIA.gov Historical Data", layout="centered", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
@@ -33,15 +33,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# CENTERED LOGO
-col1, col2, col3 = st.columns([1, 2, 1])
+# CENTERED + BIGGER SUNLY HOME LOGO (fills the red box area)
+col1, col2, col3 = st.columns([1, 3, 1])   # Wider middle column for bigger logo
 with col2:
-    st.image("sunly-logo.png", width=380)
+    st.image("sunly-logo.png", width=520)   # Bigger to fill the highlighted area
 
-# PERFECTLY CENTERED TITLE
-col1, col2, col3 = st.columns([1, 2, 1])
+# CENTERED TITLE
+col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.title("Past & Projected Electricity Cost")
+    st.title("EIA.gov Historical Data")
 
 st.markdown("**Real EIA data • 10 years back + 10 years forward • Powered by Sunly Home**")
 
@@ -51,8 +51,8 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED BUTTON
-col1, col2, col3 = st.columns([1, 2, 1])
+# CENTERED BUTTON (aligned directly under the logo)
+col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if st.button("Generate Report"):
         with st.spinner("Fetching real EIA data and building your report..."):
@@ -200,7 +200,7 @@ with col2:
                     pdf.multi_cell(0, 8, "You now have the 20-year forecast. Lets build your exit strategy with Sunly Home. I have an assessment specialist ready to model the highest-performing solar + battery option for your home. If the math doesnt win, you dont switch. Simple as that.")
 
                     pdf_output = io.BytesIO(pdf.output(dest='S').encode('latin-1', errors='replace'))
-                    col1, col2, col3 = st.columns([1, 2, 1])
+                    col1, col2, col3 = st.columns([1, 3, 1])
                     with col2:
                         st.download_button(
                             label="Download Report",
