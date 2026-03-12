@@ -8,7 +8,7 @@ import io
 from datetime import date
 
 # ================== SUNLY HOME BRANDING + WHITE BACKGROUND ==================
-st.set_page_config(page_title="EIA.gov Historical Data", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Past & Projected Electricity Cost", layout="centered", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
@@ -20,7 +20,7 @@ st.markdown("""
         /* Full-width landscape charts */
         .stPlot { width: 100% !important; max-width: 100% !important; }
         
-        /* Sunly Blue buttons - bold white text */
+        /* Sunly Blue buttons with black border */
         .stButton > button, .stDownloadButton > button {
             background-color: #0066CC !important;
             color: white !important;
@@ -28,20 +28,22 @@ st.markdown("""
             font-size: 18px !important;
             padding: 12px 30px !important;
             border-radius: 8px !important;
+            border: 2px solid #000000 !important;
             width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# CENTERED + BIGGER SUNLY HOME LOGO (fills the red box area)
-col1, col2, col3 = st.columns([1, 3, 1])   # Wider middle column for bigger logo
-with col2:
-    st.image("sunly-logo.png", width=520)   # Bigger to fill the highlighted area
-
-# CENTERED TITLE
+# CENTERED + BIGGER SUNLY HOME LOGO
 col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.title("EIA.gov Historical Data")
+    st.image("sunly-logo.png", width=520)
+
+# PERFECTLY CENTERED TWO-LINE TITLE
+col1, col2, col3 = st.columns([1, 3, 1])
+with col2:
+    st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>Historical Data</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-top: 0;'>EIA.gov</h1>", unsafe_allow_html=True)
 
 st.markdown("**Real EIA data • 10 years back + 10 years forward • Powered by Sunly Home**")
 
@@ -51,7 +53,7 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED BUTTON (aligned directly under the logo)
+# CENTERED BUTTON (perfectly aligned under logo + title)
 col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if st.button("Generate Report"):
