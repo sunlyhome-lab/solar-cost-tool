@@ -52,8 +52,8 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED BUTTON (wider middle column so text stays horizontal)
-col1, col2, col3 = st.columns([1, 4, 1])
+# PERFECTLY CENTERED BUTTON (same column width as logo so it's dead-center)
+col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if st.button("Generate Report"):
         with st.spinner("Fetching real EIA data and building your report..."):
