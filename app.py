@@ -52,8 +52,8 @@ avg_bill = st.number_input("Average Monthly Electric Bill ($)", min_value=10.0, 
 
 EIA_API_KEY = st.secrets["api"]["EIA_API_KEY"]
 
-# CENTERED "Generate Report" BUTTON
-col1, col2, col3 = st.columns([1, 3, 1])
+# PERFECTLY CENTERED BUTTON (narrower column so it sits dead-center under logo)
+col1, col2, col3 = st.columns([3, 1, 3])
 with col2:
     if st.button("Generate Report"):
         with st.spinner("Fetching real EIA data and building your report..."):
@@ -201,7 +201,7 @@ with col2:
                     pdf.multi_cell(0, 8, "You now have the 20-year forecast. Lets build your exit strategy with Sunly Home. I have an assessment specialist ready to model the highest-performing solar + battery option for your home. If the math doesnt win, you dont switch. Simple as that.")
 
                     pdf_output = io.BytesIO(pdf.output(dest='S').encode('latin-1', errors='replace'))
-                    col1, col2, col3 = st.columns([1, 2, 1])   # Wider column for download button
+                    col1, col2, col3 = st.columns([1, 2, 1])
                     with col2:
                         st.download_button(
                             label="Download Report",
